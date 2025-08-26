@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Simple Clone Viewer</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script>
+        // Change this path if your clone_package folder is served elsewhere
+        const meshJsonPath = "../clone_package/frame_0000.json";
+
+        let scene, camera, renderer, points;
+        let mouthVertices = [];
+        let clock = new THREE.Clock();
+
+        async function loadMesh() {
+            const response = await fetch(meshJsonPath);
+            const data = await response.json();
+
+            // Convert normalized landmarks to Three.js Vector3
+            // Assuming landmarks have x,y,z normalized between 0-1
+
+            // Center the points around (0,0,0)
+            const pointsArr = data.map(p => new THREE.Vector3(
+                (p.x - 0.5) * 2,
+                (0.5 - p.y) * 2,
+                (p.z) * 2
+            ));
+
+            // Find indices roughly around mouth area (example indices)
+            // These indices are approximate and extracted from MediaPipe face mesh topology
+            const mouthIndices = [
+                78,  191,  80, 81, 13, 312, 311, 310, 409,  415, 308
+            ];
+
+            mouthVertices = mouthIndices.map(i => pointsArr[i]);
+
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array(pointsArr.length * 3);
+            for (let i = 0; i < pointsArr.length; i++) {
+                vertices[i * 3] = pointsArr[i].x;
+                vertices[i * 3 + 1] = pointsArr[i].y;
+                vertices[i * 3 + 2] = pointsArr[i].z;
+            }
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+            const material = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.02 });
+            points = new THREE.Points(geometry, material);
+            scene.add(points);
+        }
+
+        function animateLips() {
+            const time = clock.getElapsedTime();
+            const scale = 1 + 0.3 * Math.sin(time * 5); // Open-close mouth animation
+
+            const positions = points.geometry.attributes.position.array;
+            // For mouth vertices, scale y position up/down to simulate opening mouth
+
+            // Approximate mouth y positions scale effect
+            const mouthIndices = [
+                78,  191,  80, 81, 13, 312, 311, 310, 409, 415, 308
+            ];
+
+            mouthIndices.forEach(idx => {
+                // Original y calculated with offset - 0.5 and scale * 2
+                // We'll add an oscillation to the y of mouth vertices
+
+                let baseY = (0.5 - 0) * 2; // reference center y for mouth (approximate 0)
+                let oscillation = 0.05 * Math.sin(clock.getElapsedTime() * 8);
+
+                positions[idx * 3 + 1] += oscillation;
+            });
+
+            points.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            animateLips();
+            renderer.render(scene, camera);
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.z = 2;
+
+            renderer = new THREE.WebGLRenderer({antialias: true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            loadMesh();
+            animate();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+__pycache__/
+node_modules/
+*.pyc
+.env
+
+clone_package/
+debug_frames/
+depth_maps/
+extracted_frames/
+input_videos/
+lipsync_data/
+face_mesh/
+frontend/
