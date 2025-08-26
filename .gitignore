@@ -4,7 +4,7 @@ node_modules/
 .env
 
 
-debug_frames/
+
 depth_maps/
 extracted_frames/
 input_videos/
