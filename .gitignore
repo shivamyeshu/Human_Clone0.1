@@ -3,7 +3,7 @@ node_modules/
 *.pyc
 .env
 
-clone_package/
+
 debug_frames/
 depth_maps/
 extracted_frames/
